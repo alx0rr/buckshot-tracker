@@ -19,7 +19,7 @@ buckshot-tracker/
     ├── buckshot-tracker.html   # The tracker — open directly in any browser
     ├── server.py               # Server source code
     ├── build-linux.sh          # Build script for Linux
-    ├── build-win.bat       # Build script for Windows
+    ├── build-win.bat           # Build script for Windows
     └── icon.ico                # App icon (all sizes)
 ```
 
@@ -48,12 +48,13 @@ windows-app\server.exe
 ```
 
 The console will print:
+
 ```
   ╔══════════════════════════════════════════════╗
   ║   BUCKSHOT TRACKER  —  SERVER                ║
   ╚══════════════════════════════════════════════╝
-   Local:    http://localhost:52341            
-   Network:  http://192.168.1.42:52341        
+   Local:    http://localhost:52341
+   Network:  http://192.168.1.42:52341
   ╔══════════════════════════════════════════════╗
   ║   Ctrl+C to stop                             ║
   ╚══════════════════════════════════════════════╝
@@ -62,6 +63,22 @@ The console will print:
 Open the **Network** URL on your phone.
 
 Press `Ctrl+C` to stop the server.
+
+---
+
+## 📸 Screenshots
+
+### Browser Interface
+
+![Browser UI](browser.png)
+
+### Phone Interface
+
+![Phone UI](phone.png)
+
+### Server Console
+
+![Console Output](console.png)
 
 ---
 
@@ -111,15 +128,15 @@ build-windows.bat
 | RU   | Русский  |
 | EN   | English  |
 | DE   | Deutsch  |
-| 中文  | Chinese  |
+| 中文 | Chinese  |
 
 ---
 
 ## 📋 Requirements
 
-| Mode        | Requirements          |
-|-------------|-----------------------|
-| HTML only   | Any modern browser    |
-| Linux app   | Linux x86-64          |
-| Windows app | Windows 10/11 x64     |
+| Mode        | Requirements |
+|-------------|-------------|
+| HTML only   | Any modern browser |
+| Linux app   | Linux x86-64 |
+| Windows app | Windows 10/11 x64 |
 | Build       | Python 3.8+, PyInstaller |
