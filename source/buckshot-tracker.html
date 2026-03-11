@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buckshot Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%230a0a0a'/%3E%3Ccircle cx='50' cy='50' r='32' fill='none' stroke='%23c0392b' stroke-width='6'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%23c0392b'/%3E%3Cline x1='50' y1='8' x2='50' y2='26' stroke='%23c0392b' stroke-width='5' stroke-linecap='round'/%3E%3Cline x1='50' y1='74' x2='50' y2='92' stroke='%23c0392b' stroke-width='5' stroke-linecap='round'/%3E%3Cline x1='8' y1='50' x2='26' y2='50' stroke='%23c0392b' stroke-width='5' stroke-linecap='round'/%3E%3Cline x1='74' y1='50' x2='92' y2='50' stroke='%23c0392b' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --red: #c0392b; --red-glow: #ff2a1a;
+    --blue: #1a6fa8; --blue-glow: #2196f3;
+    --bg: #0a0a0a; --surface: #111111; --surface2: #181818;
+    --border: #2a2a2a; --text: #c8c8c8; --text-dim: #555; --gold: #c9a84c;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh; display: flex; justify-content: center;
+    padding: 20px 16px 40px;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(150,0,0,0.08) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px);
+  }
+  .app { width: 100%; max-width: 420px; }
+
+  .header { text-align: center; padding: 28px 0 16px; }
+  .header::before {
+    content: ''; display: block; width: 60px; height: 60px; margin: 0 auto 12px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%23c0392b' stroke-width='6'/%3E%3Ccircle cx='50' cy='50' r='12' fill='%23c0392b'/%3E%3Cline x1='50' y1='10' x2='50' y2='30' stroke='%23c0392b' stroke-width='5'/%3E%3Cline x1='50' y1='70' x2='50' y2='90' stroke='%23c0392b' stroke-width='5'/%3E%3Cline x1='10' y1='50' x2='30' y2='50' stroke='%23c0392b' stroke-width='5'/%3E%3Cline x1='70' y1='50' x2='90' y2='50' stroke='%23c0392b' stroke-width='5'/%3E%3C/svg%3E") center/contain no-repeat;
+    filter: drop-shadow(0 0 10px rgba(192,57,43,0.6));
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { filter: drop-shadow(0 0 8px rgba(192,57,43,0.5)); }
+    50%      { filter: drop-shadow(0 0 18px rgba(255,42,26,0.9)); }
+  }
+  .header h1 {
+    font-family: 'Special Elite', serif; font-size: 1.9rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: #fff;
+    text-shadow: 0 0 20px rgba(192,57,43,0.7), 0 0 40px rgba(192,57,43,0.3);
+  }
+  .header p { font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.3em; text-transform: uppercase; margin-top: 4px; }
+
+
+  .lang-bar { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
+  .lang-btn {
+    padding: 5px 12px; border-radius: 4px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace; font-size: 0.7rem; letter-spacing: 0.15em;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .lang-btn.active { border-color: var(--red); color: #fff; background: rgba(192,57,43,0.1); }
+  .lang-btn:hover:not(.active) { color: var(--text); border-color: #444; }
+
+
+  .setup-panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px; margin-bottom: 14px; position: relative; overflow: hidden;
+  }
+  .setup-panel::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+  }
+  .setup-label { font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; }
+  .counters { display: flex; gap: 12px; margin-bottom: 14px; }
+  .counter-group {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    background: var(--surface2); border-radius: 6px; padding: 10px 8px;
+    border: 1px solid var(--border); gap: 6px;
+  }
+  .counter-group.live-group  { border-color: rgba(192,57,43,0.4); }
+  .counter-group.blank-group { border-color: rgba(26,111,168,0.4); }
+  .counter-dot { width: 18px; height: 18px; border-radius: 50%; }
+  .live-group  .counter-dot { background: var(--red);  box-shadow: 0 0 8px var(--red); }
+  .blank-group .counter-dot { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+  .counter-label { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); }
+  .counter-controls { display: flex; align-items: center; gap: 8px; }
+  .cnt-btn {
+    width: 28px; height: 28px; border: 1px solid var(--border); background: #222;
+    color: var(--text); border-radius: 4px; cursor: pointer; font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; touch-action: manipulation; user-select: none;
+  }
+  .cnt-btn:active { transform: scale(0.9); background: #333; }
+  .counter-val { font-size: 1.5rem; font-weight: bold; min-width: 28px; text-align: center; color: #fff; }
+  .start-btn {
+    width: 100%; padding: 13px; background: transparent; border: 1px solid var(--red);
+    color: #fff; font-family: 'Special Elite', serif; font-size: 1rem; letter-spacing: 0.2em;
+    text-transform: uppercase; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .start-btn::before {
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(192,57,43,0.15), transparent);
+    transition: left 0.3s;
+  }
+  .start-btn:hover::before { left: 100%; }
+  .start-btn:hover { box-shadow: 0 0 16px rgba(192,57,43,0.4); border-color: var(--red-glow); }
+  .start-btn:active { transform: scale(0.98); }
+
+
+  .shells-area { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 14px; }
+  .shells-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .shells-title { font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--text-dim); }
+  .shells-count { font-size: 0.75rem; color: var(--text-dim); }
+  .shells-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); padding: 1px; }
+  .shell-cell {
+    background: var(--surface); aspect-ratio: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; cursor: pointer;
+    transition: background 0.15s; position: relative; min-height: 70px;
+    touch-action: manipulation; user-select: none;
+  }
+  .shell-cell:active { background: #222; }
+  .shell-num { font-size: 0.55rem; color: var(--text-dim); position: absolute; top: 6px; left: 8px; }
+  .shell-icon { font-size: 1.8rem; line-height: 1; transition: transform 0.15s; }
+  .shell-cell:active .shell-icon { transform: scale(0.85); }
+  .shell-cell.live  { background: rgba(192,57,43,0.08); }
+  .shell-cell.live  .shell-icon { filter: drop-shadow(0 0 6px rgba(255,42,26,0.8)); }
+  .shell-cell.blank { background: rgba(26,111,168,0.08); }
+  .shell-cell.blank .shell-icon { filter: drop-shadow(0 0 6px rgba(33,150,243,0.8)); }
+  .shell-cell.fired { background: #0d0d0d; opacity: 0.4; cursor: default; }
+
+
+  .quick-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .q-btn {
+    padding: 12px 8px; border-radius: 6px; border: 1px solid; background: transparent;
+    font-family: 'Share Tech Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em;
+    cursor: pointer; transition: all 0.15s; touch-action: manipulation; user-select: none;
+    display: flex; flex-direction: column; align-items: center; gap: 5px; color: #fff;
+  }
+  .q-btn:active { transform: scale(0.95); }
+  .q-btn.live-btn  { border-color: rgba(192,57,43,0.5); color: #ff6b5e; }
+  .q-btn.live-btn:hover  { background: rgba(192,57,43,0.1); box-shadow: 0 0 12px rgba(192,57,43,0.2); }
+  .q-btn.blank-btn { border-color: rgba(26,111,168,0.5);  color: #5eb3ff; }
+  .q-btn.blank-btn:hover { background: rgba(26,111,168,0.1); box-shadow: 0 0 12px rgba(26,111,168,0.2); }
+  .q-btn.undo-btn  { border-color: var(--border); color: var(--text-dim); }
+  .q-btn.undo-btn:hover  { background: #1a1a1a; color: var(--text); }
+  .q-btn-icon  { font-size: 1.2rem; }
+  .q-btn-label { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; }
+
+  .stats-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; position: relative; overflow: hidden; }
+  .stats-panel::before {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .stats-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .stats-row:last-child { border-bottom: none; }
+  .stats-key { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); display: flex; align-items: center; gap: 7px; }
+  .stats-key .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .stats-val { font-size: 0.95rem; font-weight: bold; color: #fff; }
+
+
+  .danger-wrap { margin-top: 14px; }
+  .danger-label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); }
+  .danger-pct { font-size: 0.9rem; font-weight: bold; }
+  .danger-bar-bg { height: 10px; background: #1a1a1a; border-radius: 5px; overflow: hidden; border: 1px solid var(--border); }
+  .danger-bar-fill { height: 100%; border-radius: 5px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1), background 0.4s; }
+
+
+  .verdict-box {
+    margin-top: 14px; padding: 14px 16px; border-radius: 6px;
+    border: 1px solid var(--border); background: #0d0d0d;
+    min-height: 60px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 5px;
+    transition: border-color 0.35s, box-shadow 0.35s;
+  }
+  .verdict-box.vd { border-color: rgba(192,57,43,0.55); box-shadow: 0 0 14px rgba(192,57,43,0.12); }
+  .verdict-box.vs { border-color: rgba(26,111,168,0.55);  box-shadow: 0 0 14px rgba(26,111,168,0.12); }
+  .verdict-box.vg { border-color: rgba(201,168,76,0.5);   box-shadow: 0 0 14px rgba(201,168,76,0.08); }
+  .verdict-main {
+    font-family: 'Special Elite', serif; font-size: 1.08rem; letter-spacing: 0.07em;
+    text-align: center; transition: color 0.3s;
+  }
+  .verdict-sub { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; text-align: center; color: var(--text-dim); }
+
+  @keyframes vIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+  .verdict-main.anim { animation: vIn 0.28s ease-out; }
+
+
+  .empty-state { text-align: center; padding: 32px 16px; color: var(--text-dim); font-size: 0.8rem; letter-spacing: 0.1em; white-space: nowrap; }
+
+  @keyframes flashIn { 0%{opacity:0;transform:scale(0.7)} 60%{transform:scale(1.15)} 100%{opacity:1;transform:scale(1)} }
+  .shell-cell.just-set .shell-icon { animation: flashIn 0.25s ease-out; }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <h1>Buckshot</h1>
+    <p data-t="subtitle">Shell Tracker</p>
+  </div>
+
+  <div class="lang-bar">
+    <button class="lang-btn active" onclick="setLang('ru')">RU</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('de')">DE</button>
+    <button class="lang-btn" onclick="setLang('zh')">中文</button>
+  </div>
+
+  <div class="setup-panel">
+    <div class="setup-label" data-t="setup_label"></div>
+    <div class="counters">
+      <div class="counter-group live-group">
+        <div class="counter-dot"></div>
+        <div class="counter-label" data-t="live_label"></div>
+        <div class="counter-controls">
+          <button class="cnt-btn" onclick="changeCount('live',-1)">−</button>
+          <div class="counter-val" id="liveVal">3</div>
+          <button class="cnt-btn" onclick="changeCount('live',1)">+</button>
+        </div>
+      </div>
+      <div class="counter-group blank-group">
+        <div class="counter-dot"></div>
+        <div class="counter-label" data-t="blank_label"></div>
+        <div class="counter-controls">
+          <button class="cnt-btn" onclick="changeCount('blank',-1)">−</button>
+          <div class="counter-val" id="blankVal">3</div>
+          <button class="cnt-btn" onclick="changeCount('blank',1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+      <button class="start-btn" onclick="start()" data-t="load_btn"></button>
+      <button class="start-btn" onclick="clearBarrel()" style="border-color:#444;color:#888;padding:13px 14px;letter-spacing:0;font-size:1.1rem;">✕</button>
+    </div>
+  </div>
+
+  <div class="quick-btns">
+    <button class="q-btn live-btn" onclick="fireNext('live')">
+      <span class="q-btn-icon">🔴</span>
+      <span class="q-btn-label" data-t="btn_live"></span>
+    </button>
+    <button class="q-btn blank-btn" onclick="fireNext('blank')">
+      <span class="q-btn-icon">🔵</span>
+      <span class="q-btn-label" data-t="btn_blank"></span>
+    </button>
+    <button class="q-btn undo-btn" onclick="undoLast()">
+      <span class="q-btn-icon">↩</span>
+      <span class="q-btn-label" data-t="btn_undo"></span>
+    </button>
+  </div>
+
+  <div class="shells-area">
+    <div class="shells-header">
+      <span class="shells-title" data-t="barrel_title"></span>
+      <span class="shells-count" id="shellsCount">—</span>
+    </div>
+    <div id="shellsGrid"></div>
+  </div>
+
+  <div class="stats-panel">
+    <div class="stats-row">
+      <span class="stats-key"><span class="dot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></span><span data-t="stat_live"></span></span>
+      <span class="stats-val" id="statLive">—</span>
+    </div>
+    <div class="stats-row">
+      <span class="stats-key"><span class="dot" style="background:var(--blue);box-shadow:0 0 6px var(--blue)"></span><span data-t="stat_blank"></span></span>
+      <span class="stats-val" id="statBlank">—</span>
+    </div>
+    <div class="stats-row">
+      <span class="stats-key"><span class="dot" style="background:#888"></span><span data-t="stat_unknown"></span></span>
+      <span class="stats-val" id="statUnknown">—</span>
+    </div>
+    <div class="danger-wrap">
+      <div class="danger-label">
+        <span data-t="chance_label"></span>
+        <span class="danger-pct" id="dangerPct">—%</span>
+      </div>
+      <div class="danger-bar-bg"><div class="danger-bar-fill" id="dangerBar" style="width:0%"></div></div>
+      <div class="verdict-box" id="verdictBox">
+        <div class="verdict-main" id="verdictMain"></div>
+        <div class="verdict-sub"  id="verdictSub"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+const LANGS = {
+  ru: {
+    subtitle:'Shell Tracker', setup_label:'// Настройка барабана',
+    live_label:'Боевые', blank_label:'Холостые',
+    load_btn:'⚙ Загрузить барабан', btn_live:'Боевой', btn_blank:'Холостой', btn_undo:'Отмена',
+    barrel_title:'// Барабан', stat_live:'Боевых осталось', stat_blank:'Холостых осталось',
+    stat_unknown:'Неизвестно', chance_label:'Шанс боевого',
+    shells_count: n=>`${n} патронов`,
+    empty:'Настрой и загрузи барабан',
+    verdicts: {
+      empty:         ['[ Барабан пуст ]',           '',                                   'vg'],
+      all_blank:     ['✦ Только холостые ✦',        'Безопасно стрелять в себя',          'vs'],
+      all_live:      ['☠ Только боевые ☠',          'Не стреляй в себя. Вообще.',         'vd'],
+      last_one:      ['◈ Последний патрон',          'Всё ещё неизвестно',                 'vg'],
+      certain_live:  ['⚠ Точно боевой',             '100% — стреляй в дилера',            'vd'],
+      certain_blank: ['✓ Точно холостой',           '100% — можно стрелять в себя',       'vs'],
+      very_danger:   ['☠ Почти точно боевой',       'Стреляй в дилера. Не рискуй.',       'vd'],
+      danger:        ['▲ Скорее всего боевой',      'Высокий риск — думай дважды',        'vd'],
+      slight_danger: ['△ Чуть больше боевых',       'Осторожно',                          'vd'],
+      neutral:       ['~ Пятьдесят на пятьдесят',   'Чистая удача — твой выбор',          ''],
+      slight_safe:   ['▽ Чуть больше холостых',     'Небольшое преимущество',             'vs'],
+      safe:          ['↓ Скорее всего холостой',    'Можно рискнуть на себе',             'vs'],
+      very_safe:     ['✦ Вероятно холостой',        'Шанс боевого очень низкий',          'vs'],
+    }
+  },
+  en: {
+    subtitle:'Shell Tracker', setup_label:'// Chamber Setup',
+    live_label:'Live', blank_label:'Blank',
+    load_btn:'⚙ Load Chamber', btn_live:'Live', btn_blank:'Blank', btn_undo:'Undo',
+    barrel_title:'// Chamber', stat_live:'Live remaining', stat_blank:'Blank remaining',
+    stat_unknown:'Unknown', chance_label:'Live chance',
+    shells_count: n=>`${n} shells`,
+    empty:'Set up and load the chamber',
+    verdicts: {
+      empty:         ['[ Chamber empty ]',           '',                                   'vg'],
+      all_blank:     ['✦ All blanks ✦',              'Safe to shoot yourself',             'vs'],
+      all_live:      ['☠ All live ☠',                "Don't shoot yourself. At all.",      'vd'],
+      last_one:      ['◈ Last shell',                'Still unknown',                      'vg'],
+      certain_live:  ['⚠ Definitely live',          '100% — shoot the dealer',            'vd'],
+      certain_blank: ['✓ Definitely blank',         '100% — safe to shoot yourself',      'vs'],
+      very_danger:   ['☠ Almost certainly live',    'Shoot the dealer. Don\'t risk it.',  'vd'],
+      danger:        ['▲ Probably live',             'High risk — think twice',            'vd'],
+      slight_danger: ['△ Slightly more live',        'Be careful',                         'vd'],
+      neutral:       ['~ Fifty fifty',               'Pure luck — your call',              ''],
+      slight_safe:   ['▽ Slightly more blank',       'Small advantage',                    'vs'],
+      safe:          ['↓ Probably blank',            'Worth risking on yourself',          'vs'],
+      very_safe:     ['✦ Likely blank',              'Live chance is very low',            'vs'],
+    }
+  },
+  de: {
+    subtitle:'Shell Tracker', setup_label:'// Trommel Setup',
+    live_label:'Scharf', blank_label:'Blind',
+    load_btn:'⚙ Trommel laden', btn_live:'Scharf', btn_blank:'Blind', btn_undo:'Rückgängig',
+    barrel_title:'// Trommel', stat_live:'Scharf übrig', stat_blank:'Blind übrig',
+    stat_unknown:'Unbekannt', chance_label:'Scharf-Chance',
+    shells_count: n=>`${n} Patronen`,
+    empty:'Trommel konfigurieren und laden',
+    verdicts: {
+      empty:         ['[ Trommel leer ]',            '',                                   'vg'],
+      all_blank:     ['✦ Nur Blindpatronen ✦',       'Sicher auf sich selbst schießen',    'vs'],
+      all_live:      ['☠ Nur Scharfpatronen ☠',      'Nicht auf sich selbst schießen.',    'vd'],
+      last_one:      ['◈ Letzte Patrone',             'Immer noch unbekannt',               'vg'],
+      certain_live:  ['⚠ Definitiv scharf',          '100% — auf den Dealer schießen',     'vd'],
+      certain_blank: ['✓ Definitiv blind',           '100% — sicher auf sich schießen',    'vs'],
+      very_danger:   ['☠ Fast sicher scharf',        'Auf Dealer schießen. Kein Risiko.',  'vd'],
+      danger:        ['▲ Wahrscheinlich scharf',     'Hohes Risiko — zweimal überlegen',   'vd'],
+      slight_danger: ['△ Etwas mehr scharf',         'Vorsicht',                           'vd'],
+      neutral:       ['~ Fünfzig fünfzig',           'Reines Glück — deine Wahl',          ''],
+      slight_safe:   ['▽ Etwas mehr blind',          'Kleiner Vorteil',                    'vs'],
+      safe:          ['↓ Wahrscheinlich blind',      'Risiko auf sich nehmen lohnt sich',  'vs'],
+      very_safe:     ['✦ Vermutlich blind',          'Scharf-Chance sehr gering',          'vs'],
+    }
+  },
+  zh: {
+    subtitle:'子弹追踪器', setup_label:'// 转轮设置',
+    live_label:'实弹', blank_label:'空弹',
+    load_btn:'⚙ 装填转轮', btn_live:'实弹', btn_blank:'空弹', btn_undo:'撤销',
+    barrel_title:'// 转轮', stat_live:'实弹剩余', stat_blank:'空弹剩余',
+    stat_unknown:'未知', chance_label:'实弹概率',
+    shells_count: n=>`${n} 发`,
+    empty:'请配置并装填转轮',
+    verdicts: {
+      empty:         ['[ 转轮已空 ]',               '',                                   'vg'],
+      all_blank:     ['✦ 全部是空弹 ✦',             '可以对自己开枪',                     'vs'],
+      all_live:      ['☠ 全部是实弹 ☠',             '绝对不要对自己开枪',                 'vd'],
+      last_one:      ['◈ 最后一发',                  '仍然未知',                           'vg'],
+      certain_live:  ['⚠ 必定是实弹',              '100% — 对庄家开枪',                  'vd'],
+      certain_blank: ['✓ 必定是空弹',              '100% — 可以对自己开枪',              'vs'],
+      very_danger:   ['☠ 几乎肯定是实弹',           '对庄家开枪，不要冒险',               'vd'],
+      danger:        ['▲ 很可能是实弹',             '风险高 — 三思而行',                 'vd'],
+      slight_danger: ['△ 实弹略多',                 '小心',                               'vd'],
+      neutral:       ['~ 五五开',                   '纯靠运气 — 由你决定',               ''],
+      slight_safe:   ['▽ 空弹略多',                 '小优势',                             'vs'],
+      safe:          ['↓ 很可能是空弹',             '值得对自己开枪',                     'vs'],
+      very_safe:     ['✦ 大概是空弹',              '实弹概率非常低',                     'vs'],
+    }
+  }
+};
+
+let lang = 'ru';
+let totalLive = 3, totalBlank = 3;
+let shells = [], history = [];
+
+function setLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.trim() === (l === 'zh' ? '中文' : l.toUpperCase()));
+  });
+  applyT();
+  shells.length ? updateStats() : render();
+}
+
+function applyT() {
+  const d = LANGS[lang];
+  document.querySelectorAll('[data-t]').forEach(el => {
+    const k = el.getAttribute('data-t');
+    if (d[k] !== undefined) el.textContent = d[k];
+  });
+}
+
+function t(k) { return LANGS[lang][k]; }
+
+function changeCount(type, delta) {
+  if (type === 'live') {
+    totalLive = Math.max(0, Math.min(8, totalLive + delta));
+    document.getElementById('liveVal').textContent = totalLive;
+  } else {
+    totalBlank = Math.max(0, Math.min(8, totalBlank + delta));
+    document.getElementById('blankVal').textContent = totalBlank;
+  }
+}
+
+function clearBarrel() { shells = []; history = []; render(); }
+
+function start() {
+  shells = new Array(totalLive + totalBlank).fill('unknown');
+  history = [];
+  render();
+}
+
+function fireNext(type) {
+  const idx = shells.findIndex(s => s === 'unknown');
+  if (idx === -1) return;
+  history.push([...shells]);
+  shells[idx] = type;
+  renderCellAnimated(idx);
+  updateStats();
+}
+
+function undoLast() {
+  if (!history.length) return;
+  shells = history.pop();
+  render();
+}
+
+function cycleShell(i) {
+  if (shells[i] === 'fired') return;
+  history.push([...shells]);
+  if      (shells[i] === 'unknown') shells[i] = 'live';
+  else if (shells[i] === 'live')    shells[i] = 'blank';
+  else if (shells[i] === 'blank')   shells[i] = 'unknown';
+  renderCellAnimated(i);
+  updateStats();
+}
+
+function getIcon(s) {
+  return s === 'live' ? '🔴' : s === 'blank' ? '🔵' : s === 'fired' ? '💨' : '❓';
+}
+
+function render() {
+  const grid = document.getElementById('shellsGrid');
+  if (!shells.length) {
+    grid.className = '';
+    grid.innerHTML = `<div class="empty-state">${t('empty')}</div>`;
+    document.getElementById('shellsCount').textContent = '—';
+    ['statLive','statBlank','statUnknown'].forEach(id => document.getElementById(id).textContent = '—');
+    document.getElementById('dangerPct').textContent = '—%';
+    document.getElementById('dangerBar').style.width = '0%';
+    showVerdict('empty');
+    return;
+  }
+  grid.innerHTML = '';
+  grid.className = 'shells-grid';
+  shells.forEach((s, i) => {
+    const cell = document.createElement('div');
+    cell.className = `shell-cell ${s}`;
+    cell.id = `cell-${i}`;
+    cell.innerHTML = `<span class="shell-num">${i+1}</span><span class="shell-icon">${getIcon(s)}</span>`;
+    cell.onclick = () => cycleShell(i);
+    grid.appendChild(cell);
+  });
+  document.getElementById('shellsCount').textContent = LANGS[lang].shells_count(shells.length);
+  updateStats();
+}
+
+function renderCellAnimated(i) {
+  const cell = document.getElementById(`cell-${i}`);
+  if (!cell) return;
+  cell.className = `shell-cell ${shells[i]} just-set`;
+  cell.querySelector('.shell-icon').textContent = getIcon(shells[i]);
+  setTimeout(() => cell.classList.remove('just-set'), 300);
+}
+
+function showVerdict(key) {
+  const vd = LANGS[lang].verdicts[key] || ['','',''];
+  const [main, sub, cls] = vd;
+  const box = document.getElementById('verdictBox');
+  const m   = document.getElementById('verdictMain');
+  const s   = document.getElementById('verdictSub');
+  box.className = 'verdict-box' + (cls ? ' ' + cls : '');
+  m.className = 'verdict-main anim';
+  m.textContent = main;
+  s.textContent = sub;
+  if      (cls === 'vd') m.style.color = '#ff5a4a';
+  else if (cls === 'vs') m.style.color = '#5eb3ff';
+  else if (cls === 'vg') m.style.color = '#c9a84c';
+  else                   m.style.color = '#999';
+  setTimeout(() => m.classList.remove('anim'), 300);
+}
+
+function updateStats() {
+  const unknowns    = shells.filter(s => s === 'unknown').length;
+  const markedLive  = shells.filter(s => s === 'live').length;
+  const markedBlank = shells.filter(s => s === 'blank').length;
+
+  const rLive       = Math.max(0, totalLive  - markedLive);
+  const rBlank      = Math.max(0, totalBlank - markedBlank);
+  const hiddenTotal = rLive + rBlank; 
+
+  document.getElementById('statLive').textContent    = rLive;
+  document.getElementById('statBlank').textContent   = rBlank;
+  document.getElementById('statUnknown').textContent = unknowns;
+
+
+  const chance = hiddenTotal > 0 ? (rLive / hiddenTotal) * 100 : 0;
+  document.getElementById('dangerPct').textContent = chance.toFixed(1) + '%';
+
+  const bar = document.getElementById('dangerBar');
+  bar.style.width = chance + '%';
+  if      (chance === 0) bar.style.background = '#2a2a2a';
+  else if (chance < 33)  bar.style.background = 'linear-gradient(90deg,#1a6fa8,#2196f3)';
+  else if (chance < 60)  bar.style.background = 'linear-gradient(90deg,#c9a84c,#f0c040)';
+  else                   bar.style.background = 'linear-gradient(90deg,#8b0000,#c0392b,#ff2a1a)';
+
+  let key;
+  if (hiddenTotal === 0 && unknowns === 0) key = 'empty';
+  else if (rLive  === 0)                   key = 'all_blank';
+  else if (rBlank === 0)                   key = 'all_live';
+  else if (hiddenTotal === 1)              key = 'last_one';
+  else if (chance === 100)                 key = 'certain_live';
+  else if (chance === 0)                   key = 'certain_blank';
+  else if (chance >= 85)                   key = 'very_danger';
+  else if (chance >= 65)                   key = 'danger';
+  else if (chance >= 53)                   key = 'slight_danger';
+  else if (chance >= 47)                   key = 'neutral';
+  else if (chance >= 35)                   key = 'slight_safe';
+  else if (chance >= 15)                   key = 'safe';
+  else                                     key = 'very_safe';
+
+  showVerdict(key);
+}
+
+applyT();
+render();
+</script>
+</body>
+</html>
